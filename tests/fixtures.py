@@ -32,7 +32,7 @@ def test_data_for_api(request) -> dict:
 
 
 @pytest.fixture
-def test_data_for_edit_assert():
+def test_data_for_api_for_edit_assert():
     """Returns two test data sets for testing editing functions."""
     ini_data = next(PostDataGenerator().generate_post_data())
     new_data = next(PostDataGenerator().generate_post_data())
@@ -42,22 +42,9 @@ def test_data_for_edit_assert():
     
     
 @pytest.fixture
-def test_data_for_database(request):
+def test_data_for_database():
     """Returns test data sets for database operations."""
-    fields = request.param
-    yield next(PostDataGenerator().generate_post_data(**fields))
-
-
-@pytest.fixture
-def get_data(sql_db: fixture, request):
-    """Returns data from database by specified id."""
-    try:
-        data = sql_db.db_get_post_by_id(request.param)
-    except Exception as exc:
-        exc.add_note('Data getting failed')
-        raise
-    else:
-        return data
+    yield next(PostDataGenerator().generate_post_data())
 
 
 @pytest.fixture

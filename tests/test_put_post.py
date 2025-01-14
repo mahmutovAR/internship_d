@@ -37,11 +37,11 @@ from pytest import fixture
         - Статус код "200 OK"
         """)
 def test_put_post(api_route: fixture, sql_db: fixture,
-                  test_data_for_edit_assert: fixture, delete_data: fixture):
+                  test_data_for_api_for_edit_assert: fixture, delete_data: fixture):
     try:
         with allure.step('Добавить новый пост с заголовком и текстом,'
                          'используя POST запрос к API "wp/v2/posts"'):
-            ini_data = test_data_for_edit_assert[0]
+            ini_data = test_data_for_api_for_edit_assert[0]
             ini_title = ini_data['title']
             ini_content = ini_data['content']
             response = api_route.request_to_add_post(ini_data)
@@ -51,7 +51,7 @@ def test_put_post(api_route: fixture, sql_db: fixture,
             assert sql_db.db_get_post_by_id(post_id), 'Post is expected to be added'
 
         with allure.step('Редактировать только заголовок поста, используя PUT запрос к API "wp/v2/posts"'):
-            new_data = test_data_for_edit_assert[1]
+            new_data = test_data_for_api_for_edit_assert[1]
             new_title = new_data['title']
             assert ini_title != new_title, f'Expected new title "{new_title}", but got "{ini_title}"'
             response = api_route.request_to_put_post(post_id, {'title': new_title})

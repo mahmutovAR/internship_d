@@ -40,7 +40,7 @@ def test_delete_post(api_route: fixture, sql_db: fixture, test_data_for_api: fix
     post_id = response.json()['id']
 
     with allure.step('Проверить, что пост добавлен, используя запрос к БД'):
-        assert sql_db.db_get_post_by_id(post_id), 'Post is expected to be published'
+        assert sql_db.db_get_post_by_id(post_id), 'Post is expected to be added'
 
     with allure.step('Удалить пост, используя DELETE запрос к API "wp/v2/posts"'):
         response = api_route.request_to_delete_post(post_id)

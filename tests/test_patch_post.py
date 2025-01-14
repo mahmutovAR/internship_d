@@ -38,11 +38,11 @@ from pytest import fixture
         - Статус код "200 OK"
         """)
 def test_patch_post(api_route: fixture, sql_db: fixture,
-                    test_data_for_edit_assert: fixture, delete_data: fixture):
+                    test_data_for_api_for_edit_assert: fixture, delete_data: fixture):
     try:
         with allure.step('Добавить новый пост с заголовком и текстом,'
                          'используя POST запрос к API "wp/v2/posts"'):
-            ini_data = test_data_for_edit_assert[0]
+            ini_data = test_data_for_api_for_edit_assert[0]
             ini_title = ini_data['title']
             ini_content = ini_data['content']
             ini_status = ini_data['status']
@@ -53,7 +53,7 @@ def test_patch_post(api_route: fixture, sql_db: fixture,
             assert sql_db.db_get_post_by_id(post_id), 'Post is expected to be added'
 
         with allure.step('Редактировать только текст поста, используя PATCH запрос к API "wp/v2/posts"'):
-            new_data = test_data_for_edit_assert[1]
+            new_data = test_data_for_api_for_edit_assert[1]
             new_content = new_data['content']
             assert ini_content != new_content, f'Expected new content "{new_content}", but got "{ini_content}"'
             response = api_route.request_to_patch_post(post_id, {'content': new_content})
