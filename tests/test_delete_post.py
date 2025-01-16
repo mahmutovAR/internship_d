@@ -37,23 +37,20 @@ from . import data_assert
                          indirect=True)
 def test_delete_post(api_route: fixture, sql_db: fixture,
                      test_data_for_api: fixture, delete_data: fixture):
-    post_id = None
-    try:
-        with allure.step('Добавить (опубликовать) новый пост с заголовком и/или текстом,'
-                         'используя POST запрос к API "wp/v2/posts"'):
-            response = api_route.add_post(test_data_for_api)
-            post_id = response.json()['id']
+    with allure.step('Добавить (опубликовать) новый пост с заголовком и/или текстом,'
+                     'используя POST запрос к API "wp/v2/posts"'):
+        response = api_route.add_post(test_data_for_api)
+        post_id = response.json()['id']
+    delete_data.append(post_id)
 
-        with allure.step('Проверить, что пост добавлен, используя запрос к БД'):
-            data_assert.post_exists_via_db(sql_db.get_post_data(post_id))
+    with allure.step('Проверить, что пост добавлен, используя запрос к БД'):
+        data_assert.post_exists_via_db(sql_db.get_post_data(post_id))
 
-        with allure.step('Удалить пост, используя DELETE запрос к API "wp/v2/posts"'):
-            response = api_route.delete_post(post_id)
+    with allure.step('Удалить пост, используя DELETE запрос к API "wp/v2/posts"'):
+        response = api_route.delete_post(post_id)
 
-        with allure.step('Проверить статус код'):
-            data_assert.http_status_code(response.status_code, 200)
+    with allure.step('Проверить статус код'):
+        data_assert.http_status_code(response.status_code, 200)
 
-        with allure.step('Проверить, что пост удален, используя запрос к БД'):
-            data_assert.post_not_exists_via_db(sql_db.get_post_data(post_id))
-    finally:
-        delete_data(post_id)
+    with allure.step('Проверить, что пост удален, используя запрос к БД'):
+        data_assert.post_not_exists_via_db(sql_db.get_post_data(post_id))

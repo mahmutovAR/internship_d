@@ -34,12 +34,12 @@ def test_data_for_api(request) -> dict:
 
 
 @pytest.fixture
-def delete_data(sql_db: fixture):
-    def delete_(data_id: int | str):
+def delete_data(request, sql_db: fixture):
+    data_to_delete = list()
+    yield data_to_delete
+    for data_id in data_to_delete:
         try:
-            if data_id:
-                sql_db.delete_post(str(data_id))
+            sql_db.delete_post(str(data_id))
         except Exception as exc:
             exc.add_note('Data deletion failed')
             raise
-    return delete_

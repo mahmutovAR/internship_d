@@ -44,30 +44,26 @@ from . import data_assert
                           ('publish this post!!', 'and add content', 'publish'),
                           ('', 'no title', 'draft'),
                           ('', 'publish without title', 'publish')])
-def test_add_post(api_route: fixture, sql_db: fixture,
-                  title: str, content: str, status: str, delete_data: fixture):
-    post_id = None
-    try:
-        with allure.step('Добавить (опубликовать) пост с заголовком и/или текстом,'
-                         'используя POST запрос к API "wp/v2/posts"'):
-            response = api_route.add_post({'title': title, 'content': content, 'status': status})
-        post_id = response.json()['id']
+def test_add_post(api_route: fixture, sql_db: fixture, delete_data: fixture,
+                  title: str, content: str, status: str):
+    with allure.step('Добавить (опубликовать) пост с заголовком и/или текстом,'
+                     'используя POST запрос к API "wp/v2/posts"'):
+        response = api_route.add_post({'title': title, 'content': content, 'status': status})
+    post_id = response.json()['id']
+    delete_data.append(post_id)
+    db_post = sql_db.get_post_data(post_id)
+    db_title = db_post['post_title']
+    db_content = db_post['post_content']
+    db_status = db_post['post_status']
 
-        db_post = sql_db.get_post_data(post_id)
-        db_title = db_post['post_title']
-        db_content = db_post['post_content']
-        db_status = db_post['post_status']
+    with allure.step('Проверить статус код'):
+        data_assert.http_status_code(response.status_code, 201)
 
-        with allure.step('Проверить статус код'):
-            data_assert.http_status_code(response.status_code, 201)
+    with allure.step('Проверить заголовок нового поста, используя запрос к БД'):
+        data_assert.post_title(title, db_title)
 
-        with allure.step('Проверить заголовок нового поста, используя запрос к БД'):
-            data_assert.post_title(title, db_title)
+    with allure.step('Проверить текст нового поста, используя запрос к БД'):
+        data_assert.post_content(content, db_content)
 
-        with allure.step('Проверить текст нового поста, используя запрос к БД'):
-            data_assert.post_content(content, db_content)
-
-        with allure.step('Проверить статус нового поста, используя запрос к БД'):
-            data_assert.post_status(status, db_status)
-    finally:
-        delete_data(post_id)
+    with allure.step('Проверить статус нового поста, используя запрос к БД'):
+        data_assert.post_status(status, db_status)
