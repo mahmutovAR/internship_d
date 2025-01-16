@@ -62,9 +62,9 @@ def test_request_get_post(api_route: fixture, sql_db: fixture,
     api_content = bs.get_text(strip=True)
     api_status = response.json()['status']
 
-    test_title = test_data_for_db['title']
-    test_content = test_data_for_db['content']
-    test_status = test_data_for_db['status']
+    test_title = test_data_for_db.title
+    test_content = test_data_for_db.content
+    test_status = test_data_for_db.status
 
     with allure.step('Проверить заголовок поста, используя данные из API запроса'):
         data_assert.post_title(test_title, api_title)

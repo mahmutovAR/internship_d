@@ -1,6 +1,6 @@
 import mysql.connector as sql
 
-from data import PostData
+from data import PostFields
 from . import DatabaseConfig
 
 
@@ -9,23 +9,23 @@ class PostsDatabase:
     def __init__(self):
         self.db_config = DatabaseConfig.config
 
-    def add_post(self, post_data: dict) -> int:
+    def add_post(self, post_data: PostFields) -> int:
         """Inserts post with the specified data."""
         with sql.connect(**self.db_config) as conn:
             with conn.cursor(dictionary=True) as cur:
-                post_title = post_data['title']
-                post_content = post_data['content']
-                post_status = post_data['status']
-                post_author = post_data['author']
-                post_type = post_data['type_']
-                post_date = post_data['date']
-                post_date_gmt = post_data['date_gmt']
-                post_modified = post_data['modified']
-                post_modified_gmt = post_data['modified_gmt']
-                post_excerpt = post_data['excerpt']
-                to_ping = post_data['to_ping']
-                pinged = post_data['pinged']
-                post_content_filtered = post_data['content_filtered']
+                post_title = post_data.title
+                post_content = post_data.content
+                post_status = post_data.status
+                post_author = post_data.author
+                post_type = post_data.type_
+                post_date = post_data.date
+                post_date_gmt = post_data.date_gmt
+                post_modified = post_data.modified
+                post_modified_gmt = post_data.modified_gmt
+                post_excerpt = post_data.excerpt
+                to_ping = post_data.to_ping
+                pinged = post_data.pinged
+                post_content_filtered = post_data.content_filtered
 
                 sql_command = ("""INSERT
                 INTO wp_posts (post_title, post_content, post_status, post_author, post_type, post_date, post_date_gmt, post_modified, post_modified_gmt, post_excerpt, to_ping, pinged, post_content_filtered)

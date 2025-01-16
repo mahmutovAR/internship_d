@@ -27,10 +27,10 @@ def test_data_for_db() -> PostData:
 def test_data_for_api(request) -> dict:
     """Returns test data for requests functions."""
     fields = request.param
-    post_data = PostData(**fields).generate_post_data()
-    return {'title': post_data['title'],
-            'content': post_data['content'],
-            'status': post_data['status']}
+    post_data = PostData().generate_post_data(**fields)
+    return {'title': post_data.title,
+            'content': post_data.content,
+            'status': post_data.status}
 
 
 @pytest.fixture
