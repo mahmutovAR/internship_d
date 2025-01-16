@@ -3,23 +3,25 @@ import pytest
 from allure import severity_level
 from pytest import fixture
 
+from . import data_assert
+
 
 @allure.severity(severity_level.BLOCKER)
 @allure.epic("Тестирование API")
 @allure.feature("Добавление поста")
 @allure.testcase("Задача D1")
-@allure.story("Добавление и публикация нового поста, содержащего заголовок и текст")
-@allure.title("Добавление нового поста")
+@allure.story("Добавление (публикация) поста, содержащего заголовок и/или текст")
+@allure.title("Добавление поста")
 @allure.description(
     """
     Цель:
-        Проверить добавление и публикацию нового поста с заголовком и текстом
+        Проверить добавление (публикацию) поста, содержащего заголовок и/или текст
     
     Предусловие:
         Проект WordPress развернут
 
     Шаги:
-        1. Добавить и опубликовать новый пост с заголовком и текстом,
+        1. Добавить (опубликовать) пост с заголовком и/или текстом,
            используя POST запрос к API "wp/v2/posts"
         2. Проверить статус код
         3. Проверить заголовок нового поста, используя запрос к БД
@@ -34,38 +36,38 @@ from pytest import fixture
         - Статус код "201 Created"
         - Заголовок соответствует введенному значению
         - Текст соответствует введенному значению
-        - Статус нового поста - "publish"
+        - Статус соответствует введенному значению
         """)
-@pytest.mark.parametrize('test_data_for_api',
-                         [{'status': 'publish'}],
-                         indirect=True)
+@pytest.mark.parametrize('title, content, status',
+                         [('post with title and content', 'some text', 'draft'),
+                          ('post without content', '', 'draft'),
+                          ('publish this post!!', 'and add content', 'publish'),
+                          ('', 'no title', 'draft'),
+                          ('', 'publish without title', 'publish')])
 def test_add_post(api_route: fixture, sql_db: fixture,
-                  test_data_for_api: fixture, delete_data: fixture):
+                  title: str, content: str, status: str, delete_data: fixture):
     post_id = None
     try:
-        with allure.step('Добавить и опубликовать новый пост с заголовком и текстом,'
+        with allure.step('Добавить (опубликовать) пост с заголовком и/или текстом,'
                          'используя POST запрос к API "wp/v2/posts"'):
-            response = api_route.request_to_add_post(test_data_for_api)
+            response = api_route.add_post({'title': title, 'content': content, 'status': status})
         post_id = response.json()['id']
-        api_title = test_data_for_api['title']
-        api_content = test_data_for_api['content']
-        api_status = test_data_for_api['status']
 
-        db_post = sql_db.db_get_post_by_id(post_id)
+        db_post = sql_db.get_post_data(post_id)
         db_title = db_post['post_title']
         db_content = db_post['post_content']
         db_status = db_post['post_status']
 
         with allure.step('Проверить статус код'):
-            assert response.status_code == 201, f'Expected status code "201 Created", but got "{response.status_code}"'
+            data_assert.http_status_code(response.status_code, 201)
 
         with allure.step('Проверить заголовок нового поста, используя запрос к БД'):
-            assert api_title == db_title, f'Expected title "{api_title}", but got "{db_title}"'
+            data_assert.post_title(title, db_title)
 
         with allure.step('Проверить текст нового поста, используя запрос к БД'):
-            assert api_content == db_content, f'Expected content "{api_content}", but got "{db_content}"'
+            data_assert.post_content(content, db_content)
 
         with allure.step('Проверить статус нового поста, используя запрос к БД'):
-            assert api_status == db_status, f'Expected status "{api_status}", but got "{db_status}"'
+            data_assert.post_status(status, db_status)
     finally:
         delete_data(post_id)

@@ -1,6 +1,9 @@
 import allure
+import pytest
 from allure import severity_level
 from pytest import fixture
+
+from . import data_assert
 
 
 @allure.severity(severity_level.CRITICAL)
@@ -37,43 +40,41 @@ from pytest import fixture
         - Пост отредактирован успешно: заголовок без изменения, текст отредактирован
         - Статус код "200 OK"
         """)
-def test_patch_post(api_route: fixture, sql_db: fixture,
-                    test_data_for_api_for_edit_assert: fixture, delete_data: fixture):
+@pytest.mark.parametrize('ini_post', [
+    {'title': 'new test post',
+     'content': 'with content',
+     'status': 'publish'}])
+@pytest.mark.parametrize('new_content', ['just some text'])
+def test_patch_post(api_route: fixture, sql_db: fixture, delete_data: fixture,
+                    ini_post: dict, new_content: str):
+    post_id = None
     try:
         with allure.step('Добавить новый пост с заголовком и текстом,'
                          'используя POST запрос к API "wp/v2/posts"'):
-            ini_data = test_data_for_api_for_edit_assert[0]
-            ini_title = ini_data['title']
-            ini_content = ini_data['content']
-            ini_status = ini_data['status']
-            response = api_route.request_to_add_post(ini_data)
+            response = api_route.add_post(ini_post)
             post_id = response.json()['id']
 
         with allure.step('Проверить, что пост добавлен, используя запрос к БД'):
-            assert sql_db.db_get_post_by_id(post_id), 'Post is expected to be added'
+            data_assert.post_exists_via_db(sql_db.get_post_data(post_id))
 
         with allure.step('Редактировать только текст поста, используя PATCH запрос к API "wp/v2/posts"'):
-            new_data = test_data_for_api_for_edit_assert[1]
-            new_content = new_data['content']
-            assert ini_content != new_content, f'Expected new content "{new_content}", but got "{ini_content}"'
-            response = api_route.request_to_patch_post(post_id, {'content': new_content})
+            response = api_route.patch_post(post_id, {'content': new_content})
 
         with allure.step('Проверить статус код'):
-            assert response.status_code == 200, f'Expected status code "200 OK", but got "{response.status_code}"'
+            data_assert.http_status_code(response.status_code, 200)
 
-        db_post = sql_db.db_get_post_by_id(post_id)
+        db_post = sql_db.get_post_data(post_id)
         db_title = db_post['post_title']
         db_content = db_post['post_content']
         db_status = db_post['post_status']
-        
+
         with allure.step('Проверить заголовок поста, используя запрос к БД'):
-            assert ini_title == db_title, f'Expected title "{ini_title}", but got "{db_title}"'
+            data_assert.post_title(ini_post['title'], db_title)
 
         with allure.step('Проверить текст поста, используя запрос к БД'):
-            assert new_content == db_content, f'Expected content "{new_content}", but got "{db_content}"'
+            data_assert.post_content(new_content, db_content)
 
         with allure.step('Проверить статус нового поста, используя запрос к БД'):
-            assert ini_status == db_status, f'Expected status "{ini_status}", but got "{db_status}"'
-
+            data_assert.post_status(ini_post['status'], db_status)
     finally:
         delete_data(post_id)

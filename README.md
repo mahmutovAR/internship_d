@@ -27,8 +27,11 @@ python3 -m pip install -r requirements.txt
 - `allure-results/` test results directory  
 **Note:** These directories will be created after running tests script
 
-* `data/` module with settings and data (database and api configuration, data classes and generators)
+* `api/` api settings module
+* `data/` data module
+* `database/` database settings module
 * `tests/` test modules
 * `create_env_properties_file.py` info file generating script
+* `pytest.ini` tests configuration file
 * `requirements.txt` required packages
 * `run_pytest_with_allure.sh` testing script

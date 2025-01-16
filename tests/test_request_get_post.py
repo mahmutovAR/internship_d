@@ -1,6 +1,9 @@
 import allure
 from allure import severity_level
+from bs4 import BeautifulSoup
 from pytest import fixture
+
+from . import data_assert
 
 
 @allure.severity(severity_level.CRITICAL)
@@ -40,36 +43,37 @@ from pytest import fixture
         - Статус соответствует введенному в БД значению
         """)
 def test_request_get_post(api_route: fixture, sql_db: fixture,
-                          test_data_for_database: fixture, delete_data: fixture):
+                          test_data_for_db: fixture, delete_data: fixture):
     post_id = None
     try:
         with allure.step('Добавить новый пост с заголовком и текстом, используя запрос к БД'):
-            post_id = sql_db.db_add_post(test_data_for_database)
+            post_id = sql_db.add_post(test_data_for_db)
 
         with allure.step('Проверить добавление поста, используя запрос к БД'):
-            assert sql_db.db_get_post_by_id(post_id), 'Post is expected to be added'
+            data_assert.post_exists_via_db(sql_db.get_post_data(post_id))
 
         with allure.step('Получить данные поста, используя GET запрос к API "wp/v2/posts" с указанием id'):
-            response = api_route.request_to_get_post_data(post_id)
+            response = api_route.get_post_data(post_id)
 
         with allure.step('Проверить статус код'):
-            assert response.status_code == 200, f'Expected status code "200 OK", but got "{response.status_code}"'
+            data_assert.http_status_code(response.status_code, 200)
 
-        api_title = response.json()['title']['raw']
-        api_content = response.json()['content']['raw']
+        api_title = response.json()['title']['rendered']
+        bs = BeautifulSoup(response.json()['content']['rendered'], "html.parser")
+        api_content = bs.get_text(strip=True)
         api_status = response.json()['status']
 
-        test_title = test_data_for_database.title
-        test_content = test_data_for_database.content
-        test_status = test_data_for_database.status
+        test_title = test_data_for_db['title']
+        test_content = test_data_for_db['content']
+        test_status = test_data_for_db['status']
 
         with allure.step('Проверить заголовок поста, используя данные из API запроса'):
-            assert test_title == api_title, f'Expected title "{test_title}", but got "{api_title}"'
+            data_assert.post_title(test_title, api_title)
 
         with allure.step('Проверить текст поста, используя данные из API запроса'):
-            assert test_content == api_content, f'Expected content "{test_content}", but got "{api_content}"'
+            data_assert.post_content(test_content, api_content)
 
         with allure.step('Проверить статус поста, используя данные из API запроса'):
-            assert test_status == api_status, f'Expected status "{test_status}", but got "{api_status}"'
+            data_assert.post_status(test_status, api_status)
     finally:
         delete_data(post_id)
